@@ -273,18 +273,28 @@ with tab1:
     
     summary_df = pd.DataFrame(summary_data)
     
-    # Display clickable table
-    st.subheader("Click on a stock to view detailed chart")
+    # Display stock selector
+    st.subheader("Select Stock to View Details")
     
-    # Create columns for stock buttons
-    cols = st.columns(5)
-    for idx, stock in enumerate(sorted(valid_stocks)):
-        col_idx = idx % 5
-        with cols[col_idx]:
-            if st.button(stock, key=f"stock_btn_{stock}", use_container_width=True):
-                st.session_state.selected_stock_dashboard = stock
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        selected_stock = st.selectbox(
+            "Search and select a stock:",
+            sorted(valid_stocks),
+            key='stock_selector_dashboard',
+            label_visibility='collapsed'
+        )
+        if selected_stock:
+            st.session_state.selected_stock_dashboard = selected_stock
+    
+    with col2:
+        st.write("")
+        st.write("")
+        if st.button("View Chart", use_container_width=True):
+            pass
     
     # Display table
+    st.subheader("All Stocks - Technical Indicators")
     st.dataframe(summary_df, use_container_width=True, hide_index=True)
     
     # Show selected stock chart
