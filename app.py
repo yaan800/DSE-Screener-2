@@ -481,7 +481,8 @@ def load_data_from_file(uploaded_file, file_type='price'):
         # Remove rows with invalid dates
         melted = melted.dropna(subset=['Date'])
         
-        # Convert price/volume to numeric
+        # Convert price/volume to numeric - handle commas in numbers (e.g., 201,932)
+        melted[file_type.capitalize()] = melted[file_type.capitalize()].astype(str).str.replace(',', '')
         melted[file_type.capitalize()] = pd.to_numeric(melted[file_type.capitalize()], errors='coerce')
         melted = melted.dropna(subset=[file_type.capitalize()])
         
