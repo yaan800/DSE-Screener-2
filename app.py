@@ -1,6 +1,7 @@
 """
 DSE Technical Screener - Complete Single File Application
 Professional interactive stock screener with technical indicators and anti-manipulation detection
+Supports date format: DD-Mon (e.g., 09-Mar, 08-Mar)
 """
 
 import streamlit as st
@@ -451,40 +452,40 @@ st.markdown("""
 
 
 def load_data_from_file(uploaded_file, file_type='price'):
-    """Load and parse TSV/CSV file"""
+    """Load and parse TSV/CSV file with DD-Mon date format support"""
     try:
-        df = pd.read_csv(uploaded_file, sep='\t')
+        df = pd.read_csv(uploaded_file, sep=',')
         
-        first_col = df.columns[0]
-        first_row_values = df.iloc[0].values
-        
-        is_header_row = False
-        if len(first_row_values) > 0:
-            try:
-                pd.to_datetime(str(first_row_values[1]))
-                is_header_row = True
-            except:
-                is_header_row = False
-        
-        if is_header_row and len(df) > 1:
-            new_cols = [df.iloc[0, 0]] + list(df.iloc[0, 1:])
-            df.columns = new_cols
-            df = df.iloc[1:].reset_index(drop=True)
-        
+        # Get ticker column (first column)
         ticker_col = df.columns[0]
         date_cols = df.columns[1:]
         
+        # Melt the dataframe from wide to long format
         melted = df.melt(id_vars=[ticker_col], var_name='Date', value_name=file_type.capitalize())
         melted.columns = ['Ticker', 'Date', file_type.capitalize()]
         
+        # Convert date - handle DD-Mon format (e.g., 09-Mar, 08-Mar)
         try:
-            melted['Date'] = pd.to_datetime(melted['Date'])
+            # Try DD-Mon format first
+            melted['Date'] = pd.to_datetime(melted['Date'], format='%d-%b')
+            # Add year (assume current year)
+            current_year = pd.Timestamp.now().year
+            melted['Date'] = melted['Date'].apply(lambda x: x.replace(year=current_year))
         except:
-            melted['Date'] = pd.to_datetime(melted['Date'], errors='coerce')
+            try:
+                # Try other common formats
+                melted['Date'] = pd.to_datetime(melted['Date'])
+            except:
+                melted['Date'] = pd.to_datetime(melted['Date'], errors='coerce')
         
+        # Remove rows with invalid dates
         melted = melted.dropna(subset=['Date'])
+        
+        # Convert price/volume to numeric
         melted[file_type.capitalize()] = pd.to_numeric(melted[file_type.capitalize()], errors='coerce')
         melted = melted.dropna(subset=[file_type.capitalize()])
+        
+        # Sort by date (oldest first)
         melted = melted.sort_values('Date').reset_index(drop=True)
         
         return melted
@@ -542,8 +543,8 @@ def main():
         st.header("📊 Configuration")
         
         st.subheader("1. Upload Data Files")
-        price_file = st.file_uploader("Upload Price Data (TSV/CSV)", type=['tsv', 'csv'], key='price')
-        volume_file = st.file_uploader("Upload Volume Data (TSV/CSV)", type=['tsv', 'csv'], key='volume')
+        price_file = st.file_uploader("Upload Price Data (CSV)", type=['csv'], key='price')
+        volume_file = st.file_uploader("Upload Volume Data (CSV)", type=['csv'], key='volume')
         
         if not (price_file and volume_file):
             st.warning("⚠️ Please upload both files")
@@ -588,7 +589,7 @@ def main():
             stock_data = merged_data[merged_data['Ticker'] == stock].copy()
             stock_data = get_timeframe_data(stock_data, timeframe_map[timeframe])
             
-            if len(stock_data) < 20:
+            if len(stock_data) < 10:
                 continue
             
             indicators = TechnicalIndicators(stock_data)
