@@ -303,7 +303,7 @@ with tab1:
         st.divider()
         st.subheader(f"Chart: {st.session_state.selected_stock_dashboard}")
         
-        stock_data = all_stock_data[st.session_state.selected_stock_dashboard]
+        stock_data = all_stock_data[st.session_state.selected_stock_dashboard].sort_values('Date').reset_index(drop=True)
         
         # Candlestick chart with BB and EMA
         fig = create_tradingview_chart(stock_data, st.session_state.selected_stock_dashboard, show_bb=True, show_ema=True)
@@ -500,7 +500,7 @@ with tab2:
             st.divider()
             st.subheader(f"Chart: {st.session_state.selected_stock_screener}")
             
-            stock_data = all_stock_data[st.session_state.selected_stock_screener]
+            stock_data = all_stock_data[st.session_state.selected_stock_screener].sort_values('Date').reset_index(drop=True)
             fig = create_tradingview_chart(stock_data, st.session_state.selected_stock_screener, show_bb=True, show_ema=True)
             st.plotly_chart(fig, use_container_width=True)
     else:
