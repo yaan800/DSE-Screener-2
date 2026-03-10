@@ -36,8 +36,9 @@ def load_data_from_file(df, file_type='price'):
         
         try:
             melted['Date'] = pd.to_datetime(melted['Date'], format='%d-%b', errors='coerce')
-            current_year = pd.Timestamp.now().year
-            melted['Date'] = melted['Date'].apply(lambda x: x.replace(year=current_year) if pd.notna(x) else x)
+            # Use 2025 as default year (adjust if your data is from a different year)
+            default_year = 2025
+            melted['Date'] = melted['Date'].apply(lambda x: x.replace(year=default_year) if pd.notna(x) else x)
         except:
             pass
         
